@@ -1,0 +1,418 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEC Muslimah Community — Events</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <span style="font-size:1.3rem">🌙</span>
+    <div class="nav-logo">SEC <span>Muslimah</span></div>
+  </div>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="events.html">Events</a></li>
+    <li><a href="notices.html">Notices</a></li>
+    <li><a href="resources.html">Resources</a></li>
+    <li><a href="donate.html">Donate</a></li>
+    <li><a href="join.html">Join Us</a></li>
+  </ul>
+  <button class="hbg" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="pghero">
+  <p class="stag">Programs & Gatherings</p>
+  <h2 class="stitle">Upcoming Events</h2>
+  <p class="sital">Register your spot — limited seats available</p>
+</div>
+
+<section class="sec" id="events">
+  <div class="si">
+    <div class="egrid" id="evGrid"></div>
+  </div>
+</section>
+
+ REG MODAL 
+<! <div class="mov" id="regMov">
+  <div class="modal">
+    <button class="mcl" onclick="closeReg()">✕</button>
+    <div id="regF">
+      <h3 class="mtit">Event Registration</h3>
+      <p class="msub" id="regEvName"></p>
+      <div class="fg"><label class="fl">Full Name</label><input class="fi" id="rN" placeholder="Your name"></div>
+      <div class="fg"><label class="fl">Student ID</label><input class="fi" id="rS" placeholder="e.g. SEC-2024-001"></div>
+      <div class="fg"><label class="fl">Department</label><select class="fi" id="rD"><option value="">Select</option><option>Computer Science & Engineering</option><option>Electrical & Electronic Engineering</option><option>Civil Engineering</option><option>Mechanical Engineering</option><option>Architecture</option><option>Other</option></select></div>
+      <div class="fg"><label class="fl">Batch / Year</label><input class="fi" id="rB" placeholder="e.g. 2023 / 2nd Year"></div>
+      <button class="btn-g bfull" onclick="submitReg()">✦ Confirm Registration</button>
+    </div>
+    <div class="rsucc" id="regSucc">
+      <div style="font-size:2.5rem;margin-bottom:.8rem">🌸</div>
+      <p style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--deep);font-weight:700">Registration Successful!</p>
+      <p style="color:var(--soft);font-style:italic;margin-top:.4rem">JazakAllahu Khairan — see you there, in sha Allah!</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="flogo">SEC <span>Muslimah Community</span></div>
+  <p>Sylhet Engineering College · Non-political · Female Students Only</p>
+  <p>Deen · Dawah · Righteous Learning</p>
+  <p class="fv">✦ Together in Faith, Stronger in Purpose ✦</p>
+</footer>
+
+<a class="afab" href="admin.html" title="Admin Panel">🔐</a>
+<div class="afab-tip">Admin Panel</div>
+
+<script>
+
+let currentEventId = null;
+
+
+/*
+ * Load events from MySQL
+ */
+
+async function loadEvents() {
+
+    const eventGrid =
+        document.getElementById('evGrid');
+
+
+    if (!eventGrid) {
+        return;
+    }
+
+
+    eventGrid.innerHTML = `
+        <div class="noevent">
+            Loading events...
+        </div>
+    `;
+
+
+    try {
+
+        const response =
+            await fetch('api/events.php');
+
+
+        const result =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+
+            throw new Error(
+                result.message ||
+                'Could not load events.'
+            );
+
+        }
+
+
+        /*
+         * Only display active events
+         */
+
+        const events =
+            (result.events || []).filter(
+                event => event.status === 'active'
+            );
+
+
+        if (events.length === 0) {
+
+            eventGrid.innerHTML = `
+                <div class="noevent">
+                    No upcoming events at the moment.
+                    Check back soon! 🌙
+                </div>
+            `;
+
+            return;
+        }
+
+
+        eventGrid.innerHTML =
+            events.map(event => `
+
+                <div class="ecard">
+
+                    <div class="ebar"></div>
+
+                    <div class="ebody">
+
+                        <span class="edate">
+                            📅 ${formatEventDate(
+                                event.event_date
+                            )}
+                        </span>
+
+                        <div class="etitle">
+                            ${escapeHtml(event.title)}
+                        </div>
+
+                        <p class="edesc">
+                            ${escapeHtml(
+                                event.description || ''
+                            )}
+                        </p>
+
+                        <div class="emeta">
+
+                            <span>
+                                🕐 ${escapeHtml(
+                                    event.event_time || ''
+                                )}
+                            </span>
+
+                            <span>
+                                📍 ${escapeHtml(
+                                    event.location || ''
+                                )}
+                            </span>
+
+                            <span>
+                                👥 ${event.seats} seats
+                            </span>
+
+                        </div>
+
+                        <button
+                            class="breg"
+                            onclick="openReg(
+                                ${event.id},
+                                '${escapeJs(event.title)}'
+                            )"
+                        >
+                            Register Now ✦
+                        </button>
+
+                    </div>
+
+                </div>
+
+            `).join('');
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        eventGrid.innerHTML = `
+            <div class="noevent">
+                Could not load events.
+                Please try again later.
+            </div>
+        `;
+
+    }
+
+}
+
+
+/*
+ * Format date
+ */
+
+function formatEventDate(dateString) {
+
+    const date =
+        new Date(dateString + 'T00:00:00');
+
+
+    if (isNaN(date.getTime())) {
+        return dateString;
+    }
+
+
+    return date.toLocaleDateString(
+        'en-US',
+        {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }
+    );
+
+}
+
+
+/*
+ * Prevent HTML injection
+ */
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+}
+
+
+/*
+ * Safely use event title inside onclick
+ */
+
+function escapeJs(value) {
+
+    return String(value)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
+
+}
+
+
+/*
+ * Open registration modal
+ */
+
+function openReg(eventId, eventName) {
+
+    currentEventId = eventId;
+
+
+    document.getElementById(
+        'regEvName'
+    ).textContent = eventName;
+
+
+    document.getElementById(
+        'regMov'
+    ).classList.add('on');
+
+
+    document.getElementById(
+        'regF'
+    ).style.display = 'block';
+
+
+    document.getElementById(
+        'regSucc'
+    ).style.display = 'none';
+
+}
+
+
+/*
+ * Close registration modal
+ */
+
+function closeReg() {
+
+    document.getElementById(
+        'regMov'
+    ).classList.remove('on');
+
+}
+
+
+/*
+ * Load events when page opens
+ */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    loadEvents
+);
+
+</script>
+
+<script src="js/app.js"></script>
+</body>
+</html>
+
+ --> 
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEC Muslimah Community — Events</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <span style="font-size:1.3rem">🌙</span>
+    <div class="nav-logo">SEC <span>Muslimah</span></div>
+  </div>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="events.html">Events</a></li>
+    <li><a href="notices.html">Notices</a></li>
+    <li><a href="resources.html">Resources</a></li>
+    <li><a href="donate.html">Donate</a></li>
+    <li><a href="join.html">Join Us</a></li>
+  </ul>
+  <button class="hbg" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="pghero">
+  <p class="stag">Programs & Gatherings</p>
+  <h2 class="stitle">Upcoming Events</h2>
+  <p class="sital">Register your spot — limited seats available</p>
+</div>
+
+<section class="sec" id="events">
+  <div class="si">
+    <div class="egrid" id="evGrid"></div>
+  </div>
+</section>
+
+<!-- REG MODAL -->
+<div class="mov" id="regMov">
+  <div class="modal">
+    <button class="mcl" onclick="closeReg()">✕</button>
+    <div id="regF">
+      <h3 class="mtit">Event Registration</h3>
+      <p class="msub" id="regEvName"></p>
+      <div class="fg"><label class="fl">Full Name</label><input class="fi" id="rN" placeholder="Your name"></div>
+      <div class="fg"><label class="fl">Student ID</label><input class="fi" id="rS" placeholder="e.g. SEC-2024-001"></div>
+      <div class="fg"><label class="fl">Department</label><select class="fi" id="rD"><option value="">Select</option><option>Computer Science & Engineering</option><option>Electrical & Electronic Engineering</option><option>Civil Engineering</option><option>Mechanical Engineering</option><option>Architecture</option><option>Other</option></select></div>
+      <div class="fg"><label class="fl">Batch / Year</label><input class="fi" id="rB" placeholder="e.g. 2023 / 2nd Year"></div>
+      <button class="btn-g bfull" onclick="submitReg()">✦ Confirm Registration</button>
+    </div>
+    <div class="rsucc" id="regSucc">
+      <div style="font-size:2.5rem;margin-bottom:.8rem">🌸</div>
+      <p style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--deep);font-weight:700">Registration Successful!</p>
+      <p style="color:var(--soft);font-style:italic;margin-top:.4rem">JazakAllahu Khairan — see you there, in sha Allah!</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="flogo">SEC <span>Muslimah Community</span></div>
+  <p>Sylhet Engineering College · Non-political · Female Students Only</p>
+  <p>Deen · Dawah · Righteous Learning</p>
+  <p class="fv">✦ Together in Faith, Stronger in Purpose ✦</p>
+</footer>
+
+<a class="afab" href="admin.html" title="Admin Panel">🔐</a>
+<div class="afab-tip">Admin Panel</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
